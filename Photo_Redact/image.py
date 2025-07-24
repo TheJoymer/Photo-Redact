@@ -9,11 +9,11 @@ class PhotoEditor:
         self.root.title("Фото-редактор")
         self.root.geometry("1000x700")
 
-        self.image = None           # Текущая PIL-картинка
-        self.displayed_img = None   # Tkinter-совместимое изображение для Canvas
-        self.img_history = []       # История для undo
-        self.scale = 1.0            # Масштаб
-        self.offset = (0, 0)        # Смещение для масштабирования
+        self.image = None
+        self.displayed_img = None
+        self.img_history = []
+        self.scale = 1.0
+        self.offset = (0, 0)
         self.drawing = False
         self.crop_mode = False
         self.draw_mode = False
@@ -22,12 +22,11 @@ class PhotoEditor:
         self.start_x = None
         self.start_y = None
         self.rect_id = None
-        self.draw_layer = None     # ImageDraw поверх изображения для рисования
+        self.draw_layer = None
 
         self.setup_ui()
 
     def setup_ui(self):
-        # Кнопки сверху
         toolbar = tk.Frame(self.root)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
@@ -65,7 +64,6 @@ class PhotoEditor:
         btn_brush_size = tk.Button(toolbar, text="Размер кисти", command=self.set_brush_size)
         btn_brush_size.pack(side=tk.LEFT)
 
-        # Canvas для отображения
         self.canvas = tk.Canvas(self.root, bg='gray')
         self.canvas.pack(fill=tk.BOTH, expand=True)
         self.canvas.bind("<ButtonPress-1>", self.start_crop_or_draw)
@@ -101,7 +99,6 @@ class PhotoEditor:
         if img is None:
             return
 
-        # Масштабируем изображение для показа
         w, h = img.size
         w_scaled = int(w * self.scale)
         h_scaled = int(h * self.scale)
@@ -113,7 +110,6 @@ class PhotoEditor:
 
     def add_to_history(self):
         if self.image:
-            # Храним копию изображения для undo
             self.img_history.append(self.image.copy())
             if len(self.img_history) > 20:
                 self.img_history.pop(0)
@@ -129,9 +125,6 @@ class PhotoEditor:
     def zoom_image(self, event):
         if self.image is None:
             return
-
-        # Масштабирование колёсиком мыши
-        # event.delta для Windows, event.num для Linux
         if event.delta > 0 or event.num == 4:
             self.scale *= 1.1
         elif event.delta < 0 or event.num == 5:
@@ -147,7 +140,6 @@ class PhotoEditor:
         if self.draw_mode:
             self.crop_mode = False
             messagebox.showinfo("Рисование", "Режим рисования включен")
-            # Создаем слой для рисования
             self.draw_layer = ImageDraw.Draw(self.image)
         else:
             messagebox.showinfo("Рисование", "Режим рисования выключен")
@@ -172,12 +164,10 @@ class PhotoEditor:
         self.start_x = int(event.x / self.scale)
         self.start_y = int(event.y / self.scale)
         if self.crop_mode:
-            # Начинаем выделение для обрезки
             if self.rect_id:
                 self.canvas.delete(self.rect_id)
                 self.rect_id = None
         elif self.draw_mode:
-            # Начинаем рисование точкой
             x, y = int(event.x / self.scale), int(event.y / self.scale)
             self.draw_layer.ellipse([x - self.brush_size // 2, y - self.brush_size // 2,
                                      x + self.brush_size // 2, y + self.brush_size // 2], fill=self.brush_color)
@@ -190,7 +180,6 @@ class PhotoEditor:
         cur_x = int(event.x / self.scale)
         cur_y = int(event.y / self.scale)
         if self.crop_mode:
-            # Обновляем выделение прямоугольника
             if self.rect_id:
                 self.canvas.delete(self.rect_id)
             self.rect_id = self.canvas.create_rectangle(
@@ -199,7 +188,6 @@ class PhotoEditor:
                 outline='red', width=2, tags="crop_rect"
             )
         elif self.draw_mode:
-            # Рисуем линию от предыдущей точки к текущей
             self.draw_layer.line([self.start_x, self.start_y, cur_x, cur_y],
                                  fill=self.brush_color, width=self.brush_size)
             self.start_x, self.start_y = cur_x, cur_y
@@ -209,7 +197,6 @@ class PhotoEditor:
         if self.image is None:
             return
         if self.crop_mode:
-            # Обрезка
             self.crop_image()
             self.rect_id = None
             self.canvas.delete("crop_rect")
@@ -259,12 +246,10 @@ class PhotoEditor:
             return
 
         img = self.image.convert("RGB")
-
-        # Яркость: коэффициент 1.0 + (brightness / 100)
+        
         enhancer = ImageEnhance.Brightness(img)
         img = enhancer.enhance(1.0 + brightness / 100)
 
-        # Контраст: коэффициент 1.0 + (contrast / 100)
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(1.0 + contrast / 100)
 
